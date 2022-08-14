@@ -51,7 +51,7 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
   #full_image.paste(sensor_panel_out, (observation_panel.width, sensor_panel_in.height + 20))
   full_image.paste(forecasts_panel, (0, panel_size[1] - forecasts_panel.height))
   #full_image.paste(celestial_panel, (observation_panel.width + sensor_panel_in.width, 0))
-  full_image.paste(info_panel, (panel_size[0] - info_panel.width, 0))
+  #full_image.paste(info_panel, (panel_size[0] - info_panel.width, 0))
   elapsed_draw_time = timer() - start_draw_time
 
   if (config.getboolean('DRAW_BORDERS')):

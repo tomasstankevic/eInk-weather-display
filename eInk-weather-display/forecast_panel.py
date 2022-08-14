@@ -12,9 +12,9 @@ from type_alias import Fonts, Icons, WeatherData
 def get_forecasts_panel(forecast_data: WeatherData, images: Icons, fonts: Fonts, config: SectionProxy) -> tuple[Image.Image, tuple[str, str]]:
   logger = logging.getLogger(__name__)
   logger.info('Generating forecast panel')
-  icon_width = 200
-  x_size = 1872
-  y_size = 800
+  icon_width = 64
+  x_size = 600
+  y_size = 200
   (forecasts, position, position_name, _) = forecast_data
   count = len(forecasts.keys())
 
@@ -22,17 +22,17 @@ def get_forecasts_panel(forecast_data: WeatherData, images: Icons, fonts: Fonts,
   image = Image.new('L', (x_size, y_size), 0xff)
   draw = ImageDraw.Draw(image)
 
-  utils.draw_title(draw, fonts['font_sm'], 'FORECAST', position_name, fonts['font_xxs'])
+  #utils.draw_title(draw, fonts['font_sm'], 'FORECAST', position_name, fonts['font_xxs'])
 
-  data_y_base = 100
-  icon_column_width = 60
+  data_y_base = 10
+  icon_column_width = 10
   x_step = (x_size - icon_column_width)//count
   x_base = x_step//2 + icon_column_width
 
   temperature_icon = icons.get_scaled_image(images['misc']['temperature'], 70)
   image.paste(temperature_icon, (10, data_y_base + 290), temperature_icon)
-  wind_speed_icon = icons.get_scaled_image(images['misc']['wind'], 70)
-  image.paste(wind_speed_icon, (10, data_y_base + 370), wind_speed_icon)
+  #wind_speed_icon = icons.get_scaled_image(images['misc']['wind'], 70)
+  #image.paste(wind_speed_icon, (10, data_y_base + 370), wind_speed_icon)
 
   for date, i in zip(dates, range(len(dates))):
     is_daylight = get_is_daylight(position, date)
@@ -52,20 +52,20 @@ def get_forecasts_panel(forecast_data: WeatherData, images: Icons, fonts: Fonts,
     draw_utils.draw_warning_icons(data["Temperature"], date_local, images, image, weather_icon, icon_position, config)
 
     # Temperature
-    utils.draw_quantity(draw, (x_base + i*x_step, data_y_base + 350), str(round(data["Temperature"])), '°C', fonts)
+    utils.draw_quantity(draw, (x_base + i*x_step, data_y_base + 35), str(round(data["Temperature"])), '°C', fonts)
     # Wind speed
-    utils.draw_quantity(draw, (x_base + i*x_step, data_y_base + 430), str(round(data["WindSpeedMS"])), 'm/s', fonts)
+    utils.draw_quantity(draw, (x_base + i*x_step, data_y_base + 43), str(round(data["WindSpeedMS"])), 'm/s', fonts)
 
     # Cloud cover
     cloud_cover_raw = data["TotalCloudCover"]
     cloud_cover = math.nan if math.isnan(cloud_cover_raw) else cloud_cover_raw / 100 * 8
     cloud_cover_icon = icons.get_scaled_image(utils.get_cloud_cover_icon(cloud_cover, images, fonts, config), 160)
-    image.paste(cloud_cover_icon, (x_base + i*x_step - cloud_cover_icon.width//2, data_y_base + 450), cloud_cover_icon)
+    #image.paste(cloud_cover_icon, (x_base + i*x_step - cloud_cover_icon.width//2, data_y_base + 450), cloud_cover_icon)
 
     # Wind direction
     wind_image = icons.get_scaled_image(images['misc']['wind_icon'], 160)
     wind_image_rot = wind_image.rotate(-data['WindDirection'] + 180, fillcolor=0xff, resample=Image.BICUBIC)
-    image.paste(wind_image_rot, (x_base + i*x_step - wind_image_rot.width//2, data_y_base + 450), wind_image_rot)
+    #image.paste(wind_image_rot, (x_base + i*x_step - wind_image_rot.width//2, data_y_base + 450), wind_image_rot)
 
   # Borders
   if (config.getboolean('DRAW_PANEL_BORDERS')):

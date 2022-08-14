@@ -13,8 +13,8 @@ SUPPORTED_EPD_MODELS = ['7.8', '10.3']
 
 def draw_quantity(draw: ImageDraw.ImageDraw, mid_point: tuple[int, int], value: str, unit: str, fonts: Fonts, font: str = 'font_sm', font_unit: str = 'font_xs') -> None:
   (x, y) = mid_point
-  draw.text((x - 7, y), value, font=fonts[font], fill=0, anchor='rs')
-  draw.text((x + 7, y), unit, font=fonts[font_unit], fill=0, anchor='ls')
+  draw.text((x - 3, y), value, font=fonts[font], fill=0, anchor='rs')
+  draw.text((x + 3, y), unit, font=fonts[font_unit], fill=0, anchor='ls')
 
 
 def check_python_version() -> None:
@@ -49,7 +49,7 @@ def from_8bit_to_2bit(image: Image.Image) -> bytes:
 def get_epd_data(config: SectionProxy) -> tuple[Optional[ctypes.CDLL], tuple[int, int]]:
   if (is_supported_epd(config.get('EPD_MODEL'))):
     if (config.getboolean('FILE_OUTPUT')):
-      return (None, (1872, 1404))
+      return (None, (600, 448))
     else:
       return (ctypes.CDLL("lib/epd78.so"), (1872, 1404))
   else:
@@ -58,7 +58,7 @@ def get_epd_data(config: SectionProxy) -> tuple[Optional[ctypes.CDLL], tuple[int
 
 def get_fonts(config: SectionProxy) -> Fonts:
   if (is_supported_epd(config.get('EPD_MODEL'))):
-    font_mult = 4
+    font_mult = 1
   else:
     raise Exception(f'Unsupported model: {config.get("EPD_MODEL")}')
 
@@ -75,8 +75,8 @@ def get_fonts(config: SectionProxy) -> Fonts:
 
 def draw_title(draw: ImageDraw.ImageDraw, title_font: ImageFont.FreeTypeFont, title: str, sub_title: Optional[str] = None, sub_title_font: Optional[ImageFont.FreeTypeFont] = None) -> None:
   size_width, size_height = draw.textsize(title, title_font)
-  x_padding = 20
-  y_padding = 4
+  x_padding = 2
+  y_padding = 1
 
   draw.rectangle(((0, 0), (size_width + x_padding, size_height + y_padding)), fill=0x00)
   draw.text(((size_width + x_padding)//2, (size_height + y_padding)//2), title, fill="white", font=title_font, anchor='mm')
