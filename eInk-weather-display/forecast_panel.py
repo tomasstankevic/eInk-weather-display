@@ -12,7 +12,7 @@ from type_alias import Fonts, Icons, WeatherData
 def get_forecasts_panel(forecast_data: WeatherData, images: Icons, fonts: Fonts, config: SectionProxy) -> tuple[Image.Image, tuple[str, str]]:
   logger = logging.getLogger(__name__)
   logger.info('Generating forecast panel')
-  icon_width = 64
+  icon_width = 75
   x_size = 600
   y_size = 200
   (forecasts, position, position_name, _) = forecast_data
@@ -38,13 +38,13 @@ def get_forecasts_panel(forecast_data: WeatherData, images: Icons, fonts: Fonts,
     is_daylight = get_is_daylight(position, date)
     data = forecasts[date]
     date_local = utils.utc_datetime_string_to_local_datetime(date)
-    date_formatted = date_local.strftime('%-H:%M')
+    date_formatted = date_local.strftime('%H:%M')
 
     # Time
     draw.text((x_base + i*x_step, data_y_base + 10), date_formatted, font=(fonts['font_sm'] if date_formatted != "15:00" else fonts['font_sm_bold']), fill=0, anchor='mt')
 
     # Weather icon
-    icon_position = (x_base + i*x_step - icon_width//2, data_y_base + 80)
+    icon_position = (x_base + i*x_step - icon_width//2, data_y_base + 90)
     weather_icon = icons.get_scaled_image(get_forecats_weather_icon(data['WeatherSymbol3'], is_daylight, images, fonts, config), icon_width)
     image.paste(weather_icon, icon_position, weather_icon)
 
@@ -52,9 +52,9 @@ def get_forecasts_panel(forecast_data: WeatherData, images: Icons, fonts: Fonts,
     draw_utils.draw_warning_icons(data["Temperature"], date_local, images, image, weather_icon, icon_position, config)
 
     # Temperature
-    utils.draw_quantity(draw, (x_base + i*x_step, data_y_base + 35), str(round(data["Temperature"])), '°C', fonts)
+    utils.draw_quantity(draw, (x_base + i*x_step, data_y_base + 75), str(round(data["Temperature"])), '°C', fonts)
     # Wind speed
-    utils.draw_quantity(draw, (x_base + i*x_step, data_y_base + 43), str(round(data["WindSpeedMS"])), 'm/s', fonts)
+    #utils.draw_quantity(draw, (x_base + i*x_step, data_y_base + 43), str(round(data["WindSpeedMS"])), 'm/s', fonts)
 
     # Cloud cover
     cloud_cover_raw = data["TotalCloudCover"]

@@ -58,7 +58,7 @@ def get_epd_data(config: SectionProxy) -> tuple[Optional[ctypes.CDLL], tuple[int
 
 def get_fonts(config: SectionProxy) -> Fonts:
   if (is_supported_epd(config.get('EPD_MODEL'))):
-    font_mult = 1
+    font_mult = 2
   else:
     raise Exception(f'Unsupported model: {config.get("EPD_MODEL")}')
 
