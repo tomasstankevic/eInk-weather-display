@@ -45,7 +45,7 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
 
   # Paste the panels on the main image
   logger.info('Pasting panels')
-  full_image = Image.new('L', (panel_size[0], panel_size[1]), 0xff)
+  full_image = Image.new('RGB', (panel_size[0], panel_size[1]), (255, 255, 255))
   #full_image.paste(observation_panel, (0, 0))
   #full_image.paste(sensor_panel_in, (observation_panel.width, 0))
   #full_image.paste(sensor_panel_out, (observation_panel.width, sensor_panel_in.height + 20))
@@ -55,7 +55,7 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
   elapsed_draw_time = timer() - start_draw_time
 
   if (config.getboolean('DRAW_BORDERS')):
-    border_color = 0x80
+    border_color = (0,0,0)
     draw_width = 2
     draw = ImageDraw.Draw(full_image)
     draw.line([0, panel_size[1] - forecasts_panel.height, panel_size[0], panel_size[1] - forecasts_panel.height], fill=border_color, width=draw_width)
@@ -72,11 +72,12 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
     logger.info(f'Sending image to EPD, {"full" if init else "partial"} refresh')
     if (config.getboolean('MIRROR_HORIZONTAL')):
       full_image = full_image.transpose(Image.FLIP_LEFT_RIGHT)
-    image_bytes = full_image.rotate(0 if not config.getboolean('ROTATE_180') else 180, expand=True).tobytes()
+    image_bytes = full_image.rotate(0 if not config.getboolean('ROTATE_180') else 180, expand=True)
     if (inky):
       start_refresh_time = timer()
       try:
-        p = Process(target=inky.set_image, args=(image_bytes, SATURATION))
+        inky.set_image(image_bytes, saturation=1)
+        p = Process(target=inky.show)
         p.start()
         p.join(PROCESS_TIMEOPUT)
         logger.debug(f'Exit code: {p.exitcode}')
@@ -93,3 +94,4 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
   elapsed_time = timer() - start_time
   logger.info(f'Total time: {round(elapsed_time, 1)} s, refresh: {round(elapsed_refresh_time, 1)} s, API fetch: {round(elapsed_fetch_time, 1)} s, sensor poll: {round(elapsed_sensor_time, 1)}, draw time: {round(elapsed_draw_time, 1)} s')
   logger.info('Refresh complete')
+  return full_image

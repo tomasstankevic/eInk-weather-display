@@ -65,5 +65,5 @@ image.paste(plot_image, (0, 0))
 
 image.save('InkyTest.png')
 
-inky.set_image(image, saturation=saturation)
-inky.show()
+#inky.set_image(image, saturation=saturation)
+#inky.show()

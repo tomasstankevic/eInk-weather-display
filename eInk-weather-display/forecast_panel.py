@@ -12,14 +12,14 @@ from type_alias import Fonts, Icons, WeatherData
 def get_forecasts_panel(forecast_data: WeatherData, images: Icons, fonts: Fonts, config: SectionProxy) -> tuple[Image.Image, tuple[str, str]]:
   logger = logging.getLogger(__name__)
   logger.info('Generating forecast panel')
-  icon_width = 75
+  icon_width = 70
   x_size = 600
   y_size = 200
   (forecasts, position, position_name, _) = forecast_data
   count = len(forecasts.keys())
 
   dates = sorted(forecasts.keys())
-  image = Image.new('L', (x_size, y_size), 0xff)
+  image = Image.new('RGB', (x_size, y_size), (255, 255, 255))
   draw = ImageDraw.Draw(image)
 
   #utils.draw_title(draw, fonts['font_sm'], 'FORECAST', position_name, fonts['font_xxs'])
@@ -29,7 +29,7 @@ def get_forecasts_panel(forecast_data: WeatherData, images: Icons, fonts: Fonts,
   x_step = (x_size - icon_column_width)//count
   x_base = x_step//2 + icon_column_width
 
-  temperature_icon = icons.get_scaled_image(images['misc']['temperature'], 70)
+  temperature_icon = icons.get_scaled_image(images['misc']['temperature'], icon_width)
   image.paste(temperature_icon, (10, data_y_base + 290), temperature_icon)
   #wind_speed_icon = icons.get_scaled_image(images['misc']['wind'], 70)
   #image.paste(wind_speed_icon, (10, data_y_base + 370), wind_speed_icon)
