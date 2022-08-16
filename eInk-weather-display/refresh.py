@@ -15,9 +15,9 @@ from multiprocessing import Process
 from weather import get_observation_data, get_forecast_data, get_radiation_data
 
 PROCESS_TIMEOPUT = 10  # In seconds
+SATURATION = 1
 
-
-def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: SectionProxy, epd_so: Optional[ctypes.CDLL], init: bool) -> None:
+def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: SectionProxy, inky, init: bool) -> None:
   logger = logging.getLogger(__name__)
   logger.info('Refresh started')
   start_time = timer()
@@ -73,11 +73,10 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
     if (config.getboolean('MIRROR_HORIZONTAL')):
       full_image = full_image.transpose(Image.FLIP_LEFT_RIGHT)
     image_bytes = full_image.rotate(0 if not config.getboolean('ROTATE_180') else 180, expand=True).tobytes()
-    c_logger = ctypes.CFUNCTYPE(None, ctypes.c_int, ctypes.c_wchar_p)(logging.getLogger('esp.so').log)
-    if (epd_so):
+    if (inky):
       start_refresh_time = timer()
       try:
-        p = Process(target=epd_so.draw_image_8bit, args=(image_bytes, ctypes.c_bool(init), ctypes.c_int(config.getint('EPD_VOLTAGE')), config.getint('BITS_PER_PIXEL'), c_logger))
+        p = Process(target=inky.set_image, args=(image_bytes, SATURATION))
         p.start()
         p.join(PROCESS_TIMEOPUT)
         logger.debug(f'Exit code: {p.exitcode}')
