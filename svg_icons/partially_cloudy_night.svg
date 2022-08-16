@@ -38,13 +38,13 @@
   <path
      d="M 40 80 C 20 80, 20 40, 45 45 C 45 20, 85 25, 85 45 C 115 40, 115 80, 95 80 z"
      id="path2"
-     style="fill:#0c7bff;fill-opacity:1;stroke:#ffffff;stroke-opacity:1" />
+     style="fill:#ffffff;fill-opacity:1;stroke:#001bf3;stroke-opacity:1;stroke-width:1;stroke-dasharray:none" />
   <path
      id="star"
      d="M 0 -10 L -2.9 -4 -9.5 -3.1 -4.7 1.5 -5.9 8.1 0 5 5.9 8.1 4.8 1.5 9.5 -3.1 2.9 -4 z"
      transform="translate(15 35)"
      stroke-width="4"
-     style="fill:#ffd00c;fill-opacity:1;stroke:#fff71c;stroke-opacity:1" />
+     style="fill:#dbb100;fill-opacity:1;stroke:#fff71c;stroke-opacity:1" />
   <use
      xlink:href="#star"
      transform="translate(25 -20)"
