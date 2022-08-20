@@ -39,7 +39,7 @@ def get_El_price(start_date, end_date, region):
     df = pd.DataFrame(columns= ['Date', 'Time', 'Datetime','Price'])
     df['Date'] = dates.date.astype(str)
     df['Time'] = times.time.astype(str)
-    df['Hour'] = times.hour.astype(str)
+    df['Hour'] = times.hour.astype(int)
     df['Datetime'] = pd.to_datetime(df['Date'] + ' ' +df['Time'])
     df['Price'] = el_data2_st.values+transport_overhead
     df['Weekday'] = df['Datetime'].dt.day_name()
@@ -50,20 +50,59 @@ def get_El_price(start_date, end_date, region):
 
 def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     buf = io.BytesIO()
-    vsize = 448-200
-    hsize = 600
+    vsize = panel_size[1]
+    hsize = panel_size[0]
     dpi = 80
-    ax = El_data.plot.bar(x='Hour', y='Price', rot=0, figsize=(panel_size[0]/dpi,panel_size[1]/dpi))
-    fig = ax.get_figure()
-    fig.savefig(buf, format="png", dpi=dpi)
+    factor = 3
+    fig = plt.figure(figsize=((hsize/dpi*factor,vsize/dpi*factor)), frameon=False)
+    ax = plt.subplot()
+    vals = El_data.Price
+    hours = El_data.Hour
+    colors = ["green" if i < 3 else "red" for i in vals]
+    barplot = ax.bar(El_data.Hour, El_data.Price, 0.3, color=colors)
+    ax.set_xlim([min(El_data.Hour)-0.5, max(El_data.Hour)+0.5])
+    ax.set_xticks(hours)
+    ax.grid(axis='y', linewidth=1, color='k')
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(3)
+
+    # increase tick width
+    ax.tick_params(width=3)
+
+    for tick in ax.get_xticklabels():
+        tick.set_fontname('barlow-condensed')
+        tick.set_fontsize(14*factor)
+    for tick in ax.get_xticklabels()[1::2]:
+        tick.set_visible(False)
+    for tick in ax.get_yticklabels():
+        tick.set_fontname('barlow-condensed')
+        tick.set_fontsize(14*factor)
+
+    buf = io.BytesIO()
+
+    fig.savefig(buf, format="png", dpi=dpi,bbox_inches='tight')
     fig.savefig('elpanel_plot.png', format="png", dpi=dpi)
     buf.seek(0)
-
     plot_image = Image.open(buf).convert("RGB")
+    newsize = (hsize, vsize)
+    im1 = plot_image.resize(newsize)
+    #display(im1)
+    buf.close()
+    return im1
+
+
+
+    #ax = El_data.plot.bar(x='Hour', y='Price', rot=0, figsize=(panel_size[0]/dpi,panel_size[1]/dpi))
+    #fig = ax.get_figure()
+    #fig.savefig(buf, format="png", dpi=dpi)
+    #fig.savefig('elpanel_plot.png', format="png", dpi=dpi)
+    #buf.seek(0)
+
+    #plot_image = Image.open(buf).convert("RGB")
     #image = Image.new("RGB", (panel_size[0], panel_size[1]), (255, 255, 255))
     #image.paste(plot_image, (0, 0))
     #image.save('elpanel_image.png')
-    return plot_image
+    #return plot_image
 
 
 
