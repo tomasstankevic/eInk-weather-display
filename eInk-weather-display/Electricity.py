@@ -7,8 +7,6 @@ from logging import Logger
 import logging
 import io
 from PIL import Image
-
-
 from typing import Mapping, Optional, Dict, List, Tuple
 
 link = 'https://andelenergi.dk/?obexport_format=csv&obexport_start=2022-08-10&obexport_end=2022-08-18&obexport_region=east'
@@ -50,7 +48,7 @@ def get_El_price(start_date, end_date, region):
     df_future = df[df['Datetime']>str(datetime.now())]
     return df_future
 
-def make_El_panel(El_data, panel_size, colors, fonts):
+def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     buf = io.BytesIO()
     vsize = 448-200
     hsize = 600
@@ -58,9 +56,14 @@ def make_El_panel(El_data, panel_size, colors, fonts):
     ax = El_data.plot.bar(x='Hour', y='Price', rot=0, figsize=(panel_size[0]/dpi,panel_size[1]/dpi))
     fig = ax.get_figure()
     fig.savefig(buf, format="png", dpi=dpi)
+    fig.savefig('elpanel_plot.png', format="png", dpi=dpi)
     buf.seek(0)
 
     plot_image = Image.open(buf).convert("RGB")
-    image = Image.new("RGB", (panel_size[0], panel_size[1]), (255, 255, 255))
+    #image = Image.new("RGB", (panel_size[0], panel_size[1]), (255, 255, 255))
+    #image.paste(plot_image, (0, 0))
+    #image.save('elpanel_image.png')
+    return plot_image
 
-    return image
+
+
