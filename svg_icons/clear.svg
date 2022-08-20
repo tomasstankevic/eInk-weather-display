@@ -29,8 +29,8 @@
      inkscape:zoom="5.1346831"
      inkscape:cx="55.407509"
      inkscape:cy="71.474713"
-     inkscape:window-width="2496"
-     inkscape:window-height="1593"
+     inkscape:window-width="2560"
+     inkscape:window-height="1369"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
@@ -44,47 +44,47 @@
        d="M 15 40 L 5 40"
        stroke-linecap="round"
        stroke-width="6"
-       style="fill:#fba400;fill-opacity:1;stroke:#f69900;stroke-opacity:1" />
+       style="fill:#fba400;fill-opacity:1;stroke:#000000;stroke-opacity:1" />
     <use
        xlink:href="#ray"
        transform="rotate(-45 40 40)"
        id="use4278"
-       style="fill:#fba400;fill-opacity:1;stroke:#f69900;stroke-opacity:1" />
+       style="fill:#fba400;fill-opacity:1;stroke:#000000;stroke-opacity:1" />
     <use
        xlink:href="#ray"
        transform="rotate(45 40 40)"
        id="use4280"
-       style="fill:#fba400;fill-opacity:1;stroke:#f69900;stroke-opacity:1" />
+       style="fill:#fba400;fill-opacity:1;stroke:#000000;stroke-opacity:1" />
     <use
        xlink:href="#ray"
        transform="rotate(90 40 40)"
        id="use4282"
-       style="fill:#fba400;fill-opacity:1;stroke:#f69900;stroke-opacity:1" />
+       style="fill:#fba400;fill-opacity:1;stroke:#000000;stroke-opacity:1" />
     <use
        xlink:href="#ray"
        transform="rotate(135 40 40)"
        id="use4284"
-       style="fill:#fba400;fill-opacity:1;stroke:#f69900;stroke-opacity:1" />
+       style="fill:#fba400;fill-opacity:1;stroke:#000000;stroke-opacity:1" />
     <use
        xlink:href="#ray"
        transform="rotate(180 40 40)"
        id="use4286"
-       style="fill:#fba400;fill-opacity:1;stroke:#f69900;stroke-opacity:1" />
+       style="fill:#fba400;fill-opacity:1;stroke:#000000;stroke-opacity:1" />
     <use
        xlink:href="#ray"
        transform="rotate(225 40 40)"
        id="use4288"
-       style="fill:#fba400;fill-opacity:1;stroke:#f69900;stroke-opacity:1" />
+       style="fill:#fba400;fill-opacity:1;stroke:#000000;stroke-opacity:1" />
     <use
        xlink:href="#ray"
        transform="rotate(270 40 40)"
        id="use4290"
-       style="fill:#fba400;fill-opacity:1;stroke:#f69900;stroke-opacity:1" />
+       style="fill:#fba400;fill-opacity:1;stroke:#000000;stroke-opacity:1" />
     <circle
        cx="40"
        cy="40"
        r="15"
        id="circle4292"
-       style="fill:#f2ff21;fill-opacity:1;stroke:#f69900;stroke-opacity:1" />
+       style="fill:#f2ff21;fill-opacity:1;stroke:#000000;stroke-opacity:1" />
   </g>
 </svg>

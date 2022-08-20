@@ -13,6 +13,9 @@ from typing import Optional
 from type_alias import Icons, Fonts
 from multiprocessing import Process
 from weather import get_observation_data, get_forecast_data, get_radiation_data
+from Electricity import get_El_price, make_El_panel
+from datetime import datetime, timedelta, date
+
 
 PROCESS_TIMEOPUT = 10  # In seconds
 SATURATION = 1
@@ -21,6 +24,7 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
   logger = logging.getLogger(__name__)
   logger.info('Refresh started')
   start_time = timer()
+  now = datetime.today()
 
   # Fetch data
   start_fetch_time = timer()
@@ -28,6 +32,7 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
   #radiation_data = get_radiation_data(observation_data[3], logger)
   forecast_data = get_forecast_data(config, 7, 6, logger)
   elapsed_fetch_time = timer() - start_fetch_time
+  El_data = get_El_price(now.date(), now.date()+timedelta(days=1), region='east')
 
   start_sensor_time = timer()
   #sensor_data = get_sensor_data(logger, config, [config.get('RUUVITAG_MAC_IN'), config.get('RUUVITAG_MAC_OUT')])
@@ -42,6 +47,7 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
   (forecasts_panel, position) = get_forecasts_panel(forecast_data, images, fonts, config)
   #celestial_panel = get_celestial_panel(position, fonts, images, config)
   info_panel = get_info_panel(fonts, config)
+  El_panel = make_El_panel(El_data, (600, 228))
 
   # Paste the panels on the main image
   logger.info('Pasting panels')
@@ -50,6 +56,8 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
   #full_image.paste(sensor_panel_in, (observation_panel.width, 0))
   #full_image.paste(sensor_panel_out, (observation_panel.width, sensor_panel_in.height + 20))
   full_image.paste(forecasts_panel, (0, panel_size[1] - forecasts_panel.height))
+  full_image.paste(El_panel, (0, 0))
+
   #full_image.paste(celestial_panel, (observation_panel.width + sensor_panel_in.width, 0))
   #full_image.paste(info_panel, (panel_size[0] - info_panel.width, 0))
   elapsed_draw_time = timer() - start_draw_time
