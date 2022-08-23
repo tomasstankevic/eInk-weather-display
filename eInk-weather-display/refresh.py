@@ -32,7 +32,7 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
   #radiation_data = get_radiation_data(observation_data[3], logger)
   forecast_data = get_forecast_data(config, 7, 6, logger)
   elapsed_fetch_time = timer() - start_fetch_time
-  El_data = get_El_price(now.date(), now.date()+timedelta(days=1), region='east')
+  El_data = get_El_price(now.date()-timedelta(hours=2), now.date()+timedelta(days=2), region='east')
 
   start_sensor_time = timer()
   #sensor_data = get_sensor_data(logger, config, [config.get('RUUVITAG_MAC_IN'), config.get('RUUVITAG_MAC_OUT')])
@@ -77,6 +77,10 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
     full_image.save(filename)
     elapsed_refresh_time = 0
   else:
+    filename = config.get('OUTPUT_FILENAME')
+    logger.info(f'Saving image to {filename}')
+    full_image.save(filename)
+
     logger.info(f'Sending image to EPD, {"full" if init else "partial"} refresh')
     if (config.getboolean('MIRROR_HORIZONTAL')):
       full_image = full_image.transpose(Image.FLIP_LEFT_RIGHT)
