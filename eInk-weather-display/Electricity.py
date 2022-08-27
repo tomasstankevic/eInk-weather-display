@@ -8,6 +8,8 @@ import logging
 import io
 from PIL import Image
 from typing import Mapping, Optional, Dict, List, Tuple
+import matplotlib.font_manager as fm
+
 
 link = 'https://andelenergi.dk/?obexport_format=csv&obexport_start=2022-08-10&obexport_end=2022-08-18&obexport_region=east'
 
@@ -56,15 +58,17 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     vsize = panel_size[1]
     hsize = panel_size[0]
     dpi = 80
-    factor = 3
+    factor = 9
     fig = plt.figure(figsize=((hsize/dpi*factor,vsize/dpi*factor)), frameon=False)
     ax = plt.subplot()
-    font = 'barlow-condensed-regular'
+    font_path = 'fonts/barlow-condensed.regular.ttf'  # the location of the font file
+    font = fm.FontProperties(fname=font_path)  # get the font based on the font_path
+    #font = 'barlow-condensed-regular.ttf'
     vals = El_data.Price
     hours = El_data.WeekHour
     colors = ["green" if i < 3 else "red" for i in vals]
     barplot = ax.bar(El_data.WeekHour, El_data.Price, 0.3, color=colors)
-    #ax.set_xlim([El_data.Hour[0], El_data.Hour[-1]])
+    ax.set_xlim([-1, len(vals)])
     ax.set_xticks(hours)
     ax.set_xticklabels(El_data.Hour)
     ax.grid(axis='y', linewidth=2, color='k')
@@ -75,14 +79,14 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     ax.tick_params(width=3)
 
     for i, tick in enumerate(ax.get_xticklabels()):
-        tick.set_fontname(font)
+        tick.set_fontproperties(font)
         tick.set_fontsize(16*factor)
         if tick.get_text() == '0' or tick.get_text() == '1':
             tick.set_fontweight(weight="bold")
     for tick in ax.get_xticklabels()[1::2]:
         tick.set_visible(False)
     for tick in ax.get_yticklabels():
-        tick.set_fontname(font)
+        tick.set_fontproperties(font)
         tick.set_fontsize(16*factor)
 
     if '0' in El_data.Hour.values:
@@ -94,22 +98,22 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
             ax.axvline(x = ind1, color = 'b', linewidth = 3, label = 'axvline - full height')
             if ind1>0:
                 t = ax.text(float(ind1)-0.2, 
-                    y_pos,
-                    El_data.Weekday.iloc[ind1-1], 
-                    horizontalalignment='right', 
-                    verticalalignment='top',
-                    fontname=font,
-                    fontsize = 16*factor)
+                        y_pos,
+                        El_data.Weekday.iloc[ind1-1], 
+                        horizontalalignment='right', 
+                        verticalalignment='top',
+                        fontproperties=font,
+                        fontsize = 16*factor)
                 t.set_bbox(dict(facecolor='white', alpha=1, edgecolor='white'))
             t = ax.text(float(ind1)+0.2, 
-                y_pos, 
-                El_data.Weekday.iloc[ind1]+' '+El_data.Date.iloc[ind1], 
-                horizontalalignment='left', 
-                verticalalignment='top',
-                fontname=font,
-                fontsize = 16*factor)
+                    y_pos, 
+                    El_data.Weekday.iloc[ind1]+' '+El_data.Date.iloc[ind1], 
+                    horizontalalignment='left', 
+                    verticalalignment='top',
+                    fontproperties=font,
+                    fontsize = 16*factor)
             t.set_bbox(dict(facecolor='white', alpha=1, edgecolor='white'))
-    tit = plt.title('DKK/kWh', fontsize = 12*factor, loc='left', fontname=font)
+    tit = plt.title('DKK/kWh', fontsize = 12*factor, loc='left',fontproperties=font)
     tit.set_fontweight(weight="bold")
             #plt.show()
 

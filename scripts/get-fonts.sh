@@ -4,8 +4,8 @@ FONT_ID=barlow-condensed
 FONT_FILENAME_REGULAR=regular.woff
 FONT_FILENAME_BOLD=bold.woff
 
-FONT_FILENAME_REGULAR_TTF=barlow-condensed-regular.ttf
-FONT_FILENAME_BOLD_TTF=barlow-condensed-bold.ttf
+FONT_FILENAME_REGULAR_TTF=barlow-condensed.regular.ttf
+FONT_FILENAME_BOLD_TTF=barlow-condensed.bold.ttf
 
 echo Fetching variants info for id "$FONT_ID"
 ALL_FONTS=$(curl -s $API_ROOT/fonts/$FONT_ID)
