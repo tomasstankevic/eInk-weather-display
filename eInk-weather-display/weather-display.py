@@ -11,6 +11,7 @@ import refresh
 import ctypes
 from typing import Optional
 from type_alias import Icons, Fonts
+from inky.inky_uc8159 import Inky, DESATURATED_PALETTE, SATURATED_PALETTE
 
 CONFIG_FILENAME = 'config.ini'
 
@@ -19,10 +20,10 @@ def main_loop(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: 
   logger = logging.getLogger(__name__)
   logger.info("main_loop() started")
   wakeup_time = datetime.datetime.now()
-  if ((wakeup_time.minute - 5) % config.getint('REFRESH_FULL_INTERVAL') == 0):
-    refresh.refresh(panel_size, fonts, images, config, epd_so, True)
-  elif (wakeup_time.minute % config.getint('REFRESH_PARTIAL_INTERVAL') == 0):
-    refresh.refresh(panel_size, fonts, images, config, epd_so, False)
+  #if ((wakeup_time.minute - 5) % config.getint('REFRESH_FULL_INTERVAL') == 0):
+  refresh.refresh(panel_size, fonts, images, config, epd_so, True)
+  #elif (wakeup_time.minute % config.getint('REFRESH_PARTIAL_INTERVAL') == 0):
+  #  refresh.refresh(panel_size, fonts, images, config, epd_so, False)
 
 
 def main():
@@ -41,15 +42,18 @@ def main():
       fonts = utils.get_fonts(config)
       images = get_weather_images()
 
-      logger.info('Import epd control library')
-      (epd_so, panel_size) = utils.get_epd_data(config)
+      #logger.info('Import epd control library')
+      #(epd_so, panel_size) = utils.get_epd_data(config)
+
+      inky = Inky()
+      panel_size = inky.resolution
 
       logger.info("Initial refresh")
-      refresh.refresh(panel_size, fonts, images, config, epd_so, True)  # Once in the beginning
+      refresh.refresh(panel_size, fonts, images, config, inky, True)  # Once in the beginning
 
       logger.info('Starting scheduler')
       scheduler = BlockingScheduler()
-      scheduler.add_job(lambda: main_loop(panel_size, fonts, images, config, epd_so), 'cron', minute='*/1')
+      scheduler.add_job(lambda: main_loop(panel_size, fonts, images, config, inky), 'cron', hour='15', minute = '00')
       scheduler.start()
 
   except FileNotFoundError as e:
