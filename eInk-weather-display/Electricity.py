@@ -59,7 +59,7 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     factor = 3
     fig = plt.figure(figsize=((hsize/dpi*factor,vsize/dpi*factor)), frameon=False)
     ax = plt.subplot()
-    font = 'DejaVu Sans'
+    font = 'barlow-condensed-regular'
     vals = El_data.Price
     hours = El_data.WeekHour
     colors = ["green" if i < 3 else "red" for i in vals]
@@ -76,14 +76,14 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
 
     for i, tick in enumerate(ax.get_xticklabels()):
         tick.set_fontname(font)
-        tick.set_fontsize(14*factor)
+        tick.set_fontsize(16*factor)
         if tick.get_text() == '0' or tick.get_text() == '1':
             tick.set_fontweight(weight="bold")
     for tick in ax.get_xticklabels()[1::2]:
         tick.set_visible(False)
     for tick in ax.get_yticklabels():
         tick.set_fontname(font)
-        tick.set_fontsize(14*factor)
+        tick.set_fontsize(16*factor)
 
     if '0' in El_data.Hour.values:
         ind = El_data.index[El_data['Hour'] == '0'].tolist()
@@ -93,34 +93,38 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
             y_pos = ax.get_ylim()[1]-0.1
             ax.axvline(x = ind1, color = 'b', linewidth = 3, label = 'axvline - full height')
             if ind1>0:
-                ax.text(float(ind1)-0.1, 
-                        y_pos,
-                        El_data.Weekday.iloc[ind1-1], 
-                        horizontalalignment='right', 
-                        verticalalignment='top',
-                        fontname=font,
-                        fontsize = 14*factor)
-            ax.text(float(ind1)+0.1, 
-                    y_pos, 
-                    El_data.Weekday.iloc[ind1]+' '+El_data.Date.iloc[ind1], 
-                    horizontalalignment='left', 
+                t = ax.text(float(ind1)-0.2, 
+                    y_pos,
+                    El_data.Weekday.iloc[ind1-1], 
+                    horizontalalignment='right', 
                     verticalalignment='top',
                     fontname=font,
-                    fontsize = 14*factor)
+                    fontsize = 16*factor)
+                t.set_bbox(dict(facecolor='white', alpha=1, edgecolor='white'))
+            t = ax.text(float(ind1)+0.2, 
+                y_pos, 
+                El_data.Weekday.iloc[ind1]+' '+El_data.Date.iloc[ind1], 
+                horizontalalignment='left', 
+                verticalalignment='top',
+                fontname=font,
+                fontsize = 16*factor)
+            t.set_bbox(dict(facecolor='white', alpha=1, edgecolor='white'))
+    tit = plt.title('DKK/kWh', fontsize = 12*factor, loc='left', fontname=font)
+    tit.set_fontweight(weight="bold")
             #plt.show()
 
 
-        buf = io.BytesIO()
+    buf = io.BytesIO()
 
-        fig.savefig(buf, format="png", dpi=dpi,bbox_inches='tight')
-        fig.savefig('elpanel_plot.png', format="png", dpi=dpi)
-        buf.seek(0)
-        plot_image = Image.open(buf).convert("RGB")
-        newsize = (hsize, vsize)
-        im1 = plot_image.resize(newsize)
-        #display(im1)
-        buf.close()
-        return im1
+    fig.savefig(buf, format="png", dpi=dpi,bbox_inches='tight')
+    fig.savefig('elpanel_plot.png', format="png", dpi=dpi)
+    buf.seek(0)
+    plot_image = Image.open(buf).convert("RGB")
+    newsize = (hsize, vsize)
+    im1 = plot_image.resize(newsize)
+    #display(im1)
+    buf.close()
+    return im1
 
 
 
