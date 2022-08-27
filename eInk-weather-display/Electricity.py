@@ -94,7 +94,7 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
             ax.axvline(x = ind1, color = 'b', linewidth = 3, label = 'axvline - full height')
             if ind1>0:
                 ax.text(float(ind1)-0.1, 
-                        np.max(vals), 
+                        y_pos,
                         El_data.Weekday.iloc[ind1-1], 
                         horizontalalignment='right', 
                         verticalalignment='top',
