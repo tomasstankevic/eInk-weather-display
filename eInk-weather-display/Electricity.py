@@ -9,7 +9,28 @@ import io
 from PIL import Image
 from typing import Mapping, Optional, Dict, List, Tuple
 import matplotlib.font_manager as fm
+from PIL.Image import Dither
 
+
+BLACK = 0
+WHITE = 1
+GREEN = 2
+BLUE = 3
+RED = 4
+YELLOW = 5
+ORANGE = 6
+CLEAN = 7
+
+PALETTE = {
+    'black':tuple(np.array([57, 48, 57])/255),
+    'white':tuple(np.array([255, 255, 255])/255),
+    'green':tuple(np.array([58, 91, 70])/255),
+    'blue':tuple(np.array([61, 59, 94])/255),
+    'red':tuple(np.array([156, 72, 75])/255),
+    'yellow':tuple(np.array([208, 190, 71])/255),
+    'orange':tuple(np.array([177, 106, 73])/255),
+    'clean':tuple(np.array([255, 255, 255])/255)
+}
 
 link = 'https://andelenergi.dk/?obexport_format=csv&obexport_start=2022-08-10&obexport_end=2022-08-18&obexport_region=east'
 
@@ -65,7 +86,8 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     vsize = panel_size[1]
     hsize = panel_size[0]
     dpi = 80
-    factor = 3
+    factor = 8
+    linew = factor
     fontsize = 27
     fig = plt.figure(figsize=((hsize/dpi*factor,vsize/dpi*factor)), frameon=False)
     ax = plt.subplot()
@@ -74,17 +96,18 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     font = fm.FontProperties(fname=font_path)  # get the font based on the font_path
     vals = El_data.Price
     hours = El_data.WeekHour
-    colors = ["green" if i < 3 else "red" for i in vals]
-    barplot = ax.bar(El_data.WeekHour, El_data.Price, 0.3, color=colors)
+    colors = [PALETTE['green'] if i < 3 else PALETTE['red'] for i in vals]
+    barplot = ax.bar(El_data.WeekHour, El_data.Price, 0.4, color=colors)
     ax.set_xlim([-1, len(vals)])
+    ax.set_ylim([0, max(max(ax.get_yticks()), max(vals))])
     ax.set_xticks(hours)
     ax.set_xticklabels(El_data.Hour)
-    ax.grid(axis='y', linewidth=2, color='k')
+    ax.grid(axis='y', linewidth=linew, color=PALETTE['black'] )
     for axis in ['top','bottom','left','right']:
-        ax.spines[axis].set_linewidth(3)
+        ax.spines[axis].set_linewidth(linew)
 
     # increase tick width
-    ax.tick_params(width=3)
+    ax.tick_params(width=linew,length=linew*4)
 
     for i, tick in enumerate(ax.get_xticklabels()):
         tick.set_fontproperties(font)
@@ -105,7 +128,7 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
             ind1 = ind[0]
             print(ind)
             y_pos = ax.get_ylim()[1]-0.3
-            ax.axvline(x = ind1, color = 'b', linewidth = 3, label = 'axvline - full height')
+            ax.axvline(x = ind1, color = PALETTE['blue'], linewidth = linew, label = 'axvline - full height')
             if ind1>0:
                 t = ax.text(float(ind1)-0.2, 
                         y_pos,
@@ -135,7 +158,7 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     buf.seek(0)
     plot_image = Image.open(buf).convert("RGB")
     newsize = (hsize, vsize)
-    im1 = plot_image.resize(newsize)
+    im1 = plot_image.resize(newsize, Dither.NONE)
     #display(im1)
     buf.close()
     logger.info('Generated electricity price panel')
