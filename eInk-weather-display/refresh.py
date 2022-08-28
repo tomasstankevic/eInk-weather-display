@@ -28,38 +28,21 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
 
   # Fetch data
   start_fetch_time = timer()
-  #observation_data = get_observation_data(config, logger)
-  #radiation_data = get_radiation_data(observation_data[3], logger)
   forecast_data = get_forecast_data(config, 7, 6, logger)
   elapsed_fetch_time = timer() - start_fetch_time
-  El_data = get_El_price(now.date()-timedelta(hours=2), now.date()+timedelta(days=2), region='east')
-
-  start_sensor_time = timer()
-  #sensor_data = get_sensor_data(logger, config, [config.get('RUUVITAG_MAC_IN'), config.get('RUUVITAG_MAC_OUT')])
-  elapsed_sensor_time = timer() - start_sensor_time
+  El_data, new_data = get_El_price(now.date()-timedelta(hours=2), now.date()+timedelta(days=2), region='east')
 
   # Draw individual panels
   logger.info('Drawing panels')
   start_draw_time = timer()
-  #observation_panel = get_observation_panel(observation_data, radiation_data, images, fonts, config)
-  #sensor_panel_in = get_sensor_panel(config.get('RUUVITAG_MAC_IN'), config.get('RUUVITAG_MAC_IN_NAME'), sensor_data, images, fonts, config)
-  #sensor_panel_out = get_sensor_panel(config.get('RUUVITAG_MAC_OUT'), config.get('RUUVITAG_MAC_OUT_NAME'), sensor_data, images, fonts, config, False)
   (forecasts_panel, position) = get_forecasts_panel(forecast_data, images, fonts, config)
-  #celestial_panel = get_celestial_panel(position, fonts, images, config)
-  info_panel = get_info_panel(fonts, config)
-  El_panel = make_El_panel(El_data, (600, 228))
+  El_panel = make_El_panel(El_data, (600, 248))
 
   # Paste the panels on the main image
   logger.info('Pasting panels')
   full_image = Image.new('RGB', (panel_size[0], panel_size[1]), (255, 255, 255))
-  #full_image.paste(observation_panel, (0, 0))
-  #full_image.paste(sensor_panel_in, (observation_panel.width, 0))
-  #full_image.paste(sensor_panel_out, (observation_panel.width, sensor_panel_in.height + 20))
   full_image.paste(forecasts_panel, (0, panel_size[1] - forecasts_panel.height))
   full_image.paste(El_panel, (0, 0))
-
-  #full_image.paste(celestial_panel, (observation_panel.width + sensor_panel_in.width, 0))
-  #full_image.paste(info_panel, (panel_size[0] - info_panel.width, 0))
   elapsed_draw_time = timer() - start_draw_time
 
   if (config.getboolean('DRAW_BORDERS')):
@@ -67,10 +50,7 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
     draw_width = 2
     draw = ImageDraw.Draw(full_image)
     draw.line([0, panel_size[1] - forecasts_panel.height, panel_size[0], panel_size[1] - forecasts_panel.height], fill=border_color, width=draw_width)
-    #draw.line([observation_panel.width, 0, observation_panel.width, observation_panel.height - panel_size[1]//20], fill=border_color, width=draw_width)
-    #draw.line([observation_panel.width + sensor_panel_in.width, 0, observation_panel.width + sensor_panel_in.width, observation_panel.height - panel_size[1]//20], fill=border_color, width=draw_width)
-    #draw.line([observation_panel.width + sensor_panel_in.width + celestial_panel.width, 0, observation_panel.width + sensor_panel_in.width + celestial_panel.width, observation_panel.height - panel_size[1]//20], fill=border_color, width=draw_width)
-
+    
   if (config.getboolean('FILE_OUTPUT')):
     filename = config.get('OUTPUT_FILENAME')
     logger.info(f'Saving image to {filename}')
@@ -104,6 +84,6 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
       raise Exception('epd_so not defined')
 
   elapsed_time = timer() - start_time
-  logger.info(f'Total time: {round(elapsed_time, 1)} s, refresh: {round(elapsed_refresh_time, 1)} s, API fetch: {round(elapsed_fetch_time, 1)} s, sensor poll: {round(elapsed_sensor_time, 1)}, draw time: {round(elapsed_draw_time, 1)} s')
+  logger.info(f'Total time: {round(elapsed_time, 1)} s, refresh: {round(elapsed_refresh_time, 1)} s, API fetch: {round(elapsed_fetch_time, 1)} s, draw time: {round(elapsed_draw_time, 1)} s')
   logger.info('Refresh complete')
   return full_image

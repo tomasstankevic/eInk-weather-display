@@ -49,21 +49,29 @@ def get_El_price(start_date, end_date, region):
     df['WeekHour'] = df['Weekday']+df['Hour']
 
 
-    df_future = df[df['Datetime']>str(datetime.now())]
+    df_future = df[df['Datetime']>str(datetime.now()+timedelta(hours=-2))]
     df_future.reset_index(drop=True,inplace=True)
-    return df_future
+    new_data = False
+    tomorrow = str(datetime.now().date()+timedelta(days=1)) 
+    if tomorrow in df_future.Date.to_string():
+        new_data = True
+        logger.info('Prices for tomorrow available')
+    else:
+        logger.info('No price data for tomorrow')
+    return df_future, new_data
 
 def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     buf = io.BytesIO()
     vsize = panel_size[1]
     hsize = panel_size[0]
     dpi = 80
-    factor = 9
+    factor = 3
+    fontsize = 27
     fig = plt.figure(figsize=((hsize/dpi*factor,vsize/dpi*factor)), frameon=False)
     ax = plt.subplot()
+    font = 'barlow-condensed-regular.ttf'
     font_path = 'fonts/barlow-condensed.regular.ttf'  # the location of the font file
     font = fm.FontProperties(fname=font_path)  # get the font based on the font_path
-    #font = 'barlow-condensed-regular.ttf'
     vals = El_data.Price
     hours = El_data.WeekHour
     colors = ["green" if i < 3 else "red" for i in vals]
@@ -80,21 +88,23 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
 
     for i, tick in enumerate(ax.get_xticklabels()):
         tick.set_fontproperties(font)
-        tick.set_fontsize(16*factor)
+        tick.set_fontsize(fontsize*factor)
         if tick.get_text() == '0' or tick.get_text() == '1':
             tick.set_fontweight(weight="bold")
     for tick in ax.get_xticklabels()[1::2]:
         tick.set_visible(False)
+    for tick in ax.get_yticklabels()[1::2]:
+        tick.set_visible(False)
     for tick in ax.get_yticklabels():
         tick.set_fontproperties(font)
-        tick.set_fontsize(16*factor)
+        tick.set_fontsize(fontsize*factor)
 
     if '0' in El_data.Hour.values:
         ind = El_data.index[El_data['Hour'] == '0'].tolist()
         if len(ind)>0: 
             ind1 = ind[0]
             print(ind)
-            y_pos = ax.get_ylim()[1]-0.1
+            y_pos = ax.get_ylim()[1]-0.3
             ax.axvline(x = ind1, color = 'b', linewidth = 3, label = 'axvline - full height')
             if ind1>0:
                 t = ax.text(float(ind1)-0.2, 
@@ -103,17 +113,17 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
                         horizontalalignment='right', 
                         verticalalignment='top',
                         fontproperties=font,
-                        fontsize = 16*factor)
-                t.set_bbox(dict(facecolor='white', alpha=1, edgecolor='white'))
+                        fontsize = fontsize*factor)
+                t.set_bbox(dict(facecolor='white', alpha=0.8, edgecolor='white'))
             t = ax.text(float(ind1)+0.2, 
                     y_pos, 
                     El_data.Weekday.iloc[ind1]+' '+El_data.Date.iloc[ind1], 
                     horizontalalignment='left', 
                     verticalalignment='top',
                     fontproperties=font,
-                    fontsize = 16*factor)
-            t.set_bbox(dict(facecolor='white', alpha=1, edgecolor='white'))
-    tit = plt.title('DKK/kWh', fontsize = 12*factor, loc='left',fontproperties=font)
+                    fontsize = fontsize*factor)
+            t.set_bbox(dict(facecolor='white', alpha=0.8, edgecolor='white'))
+    tit = plt.title('DKK/kWh', fontsize = fontsize*factor, loc='left',fontproperties=font)
     tit.set_fontweight(weight="bold")
             #plt.show()
 
@@ -128,21 +138,7 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     im1 = plot_image.resize(newsize)
     #display(im1)
     buf.close()
+    logger.info('Generated electricity price panel')
     return im1
-
-
-
-    #ax = El_data.plot.bar(x='Hour', y='Price', rot=0, figsize=(panel_size[0]/dpi,panel_size[1]/dpi))
-    #fig = ax.get_figure()
-    #fig.savefig(buf, format="png", dpi=dpi)
-    #fig.savefig('elpanel_plot.png', format="png", dpi=dpi)
-    #buf.seek(0)
-
-    #plot_image = Image.open(buf).convert("RGB")
-    #image = Image.new("RGB", (panel_size[0], panel_size[1]), (255, 255, 255))
-    #image.paste(plot_image, (0, 0))
-    #image.save('elpanel_image.png')
-    #return plot_image
-
 
 
