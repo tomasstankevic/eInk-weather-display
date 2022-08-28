@@ -3,7 +3,7 @@
   viewBox="0 0 130 130" style="background-color: white" stroke="black" fill="yellow"
   stroke-width="6">
   <g transform="translate(25, 15)">
-    <path id="ray" d="M 15 40 L 5 40" stroke-linecap="round" stroke-width="4" />
+    <path id="ray" d="M 15 40 L 5 40" stroke-linecap="round" stroke-width="6" />
     <use xlink:href="#ray" transform="rotate(-45 40 40)" />
     <use xlink:href="#ray" transform="rotate(45 40 40)" />
     <use xlink:href="#ray" transform="rotate(90 40 40)" />
