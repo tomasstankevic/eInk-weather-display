@@ -4,15 +4,15 @@ DEFAULT_FILENAME = 'logger.log'
 
 
 def set_module_log_levels() -> None:
-    logging.getLogger('ruuvitag_sensor').setLevel(logging.INFO)
+    logging.getLogger('El').setLevel(logging.INFO)
     logging.getLogger('PIL').setLevel(logging.INFO)
     logging.getLogger('Rx').setLevel(logging.INFO)
 
 
-def setup(loglevel=logging.DEBUG) -> None:
+def setup(loglevel=logging.INFO) -> None:
     set_module_log_levels()
     fileHandler = logging.FileHandler(DEFAULT_FILENAME)
-    fileHandler.setLevel(logging.WARN)
+    fileHandler.setLevel(logging.INFO)
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(loglevel)
 
@@ -23,5 +23,5 @@ def setup(loglevel=logging.DEBUG) -> None:
         format=log_format,
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=handlers,
-        level=logging.DEBUG
+        level=logging.INFO
     )

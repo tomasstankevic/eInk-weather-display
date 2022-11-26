@@ -17,7 +17,7 @@ from Electricity import get_El_price, make_El_panel
 from datetime import datetime, timedelta, date
 
 
-PROCESS_TIMEOPUT = 10  # In seconds
+PROCESS_TIMEOPUT = 240  # In seconds
 SATURATION = 1
 
 def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: SectionProxy, inky, init: bool) -> None:
@@ -30,7 +30,9 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
   start_fetch_time = timer()
   forecast_data = get_forecast_data(config, 7, 6, logger)
   elapsed_fetch_time = timer() - start_fetch_time
-  El_data, new_data = get_El_price(now.date()-timedelta(hours=2), now.date()+timedelta(days=2), region='east')
+  El_data = None
+  while El_data is None:
+    El_data, new_data = get_El_price(now.date()-timedelta(hours=2), now.date()+timedelta(days=2), region='east')
 
   # Draw individual panels
   logger.info('Drawing panels')
@@ -69,12 +71,13 @@ def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: Se
       start_refresh_time = timer()
       try:
         inky.set_image(image_bytes, saturation=1)
+        inky.set_border(inky.WHITE)
         p = Process(target=inky.show)
         p.start()
         p.join(PROCESS_TIMEOPUT)
         logger.debug(f'Exit code: {p.exitcode}')
         if (p.exitcode is None):
-          logger.error('An error occured during draw_image_8bit()')
+          logger.error('Timeout - An error occured during Inky.show')
         p.terminate()
       except Exception as e:
         logger.exception('Unexpected error: %s', str(e))

@@ -10,7 +10,7 @@ from PIL import Image
 from typing import Mapping, Optional, Dict, List, Tuple
 import matplotlib.font_manager as fm
 from PIL.Image import Dither
-
+import matplotlib as mpl
 
 BLACK = 0
 WHITE = 1
@@ -50,7 +50,7 @@ def get_El_price(start_date, end_date, region):
         el_data = pd.read_csv(url, decimal=',')
     except Exception as e:
         logger.exception('Error getting price data from: %s', url)
-        return None
+        return None, None
     el_data.Date = pd.to_datetime(el_data.Date)#.dt.date
     el_data2 = el_data.set_index('Date')
     el_data2.columns = pd.to_datetime(el_data2.columns)
@@ -86,8 +86,9 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     vsize = panel_size[1]
     hsize = panel_size[0]
     dpi = 80
-    factor = 8
+    factor = 6
     linew = factor
+    mpl.rcParams['hatch.linewidth'] = linew
     fontsize = 27
     fig = plt.figure(figsize=((hsize/dpi*factor,vsize/dpi*factor)), frameon=False)
     ax = plt.subplot()
@@ -96,8 +97,30 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     font = fm.FontProperties(fname=font_path)  # get the font based on the font_path
     vals = El_data.Price
     hours = El_data.WeekHour
-    colors = [PALETTE['green'] if i < 3 else PALETTE['red'] for i in vals]
-    barplot = ax.bar(El_data.WeekHour, El_data.Price, 0.4, color=colors)
+
+    El_data['Color'] = ['red' for i in vals]
+    El_data['Hatch'] = ['red' for i in vals]
+
+    #El_data.Color[El_data.Price < El_data.Price.quantile(.4)] = 'orange'
+    #El_data.Hatch[El_data.Price < El_data.Price.quantile(.4)] = 'orange'
+    
+    El_data.Color[El_data.Price < 5] = 'orange'
+    El_data.Hatch[El_data.Price < 5] = 'orange'
+
+    El_data.Color[El_data.Price < 4] = 'yellow'
+    El_data.Hatch[El_data.Price < 4] = 'orange'
+
+    El_data.Color[El_data.Price < 3] = 'yellow'
+    El_data.Hatch[El_data.Price < 3] = 'green'
+
+    El_data.Color[El_data.Price < 2] = 'green'
+    El_data.Hatch[El_data.Price < 2] = 'green'
+
+    El_data['RGB'] = [PALETTE[col] for col in El_data['Color']]
+    El_data['HatchRGB'] = [PALETTE[col] for col in El_data['Hatch']]
+
+    barplot = ax.bar(El_data.WeekHour, El_data.Price, 0.4, color=El_data.RGB, edgecolor=El_data.HatchRGB, hatch='/', linewidth = linew)
+
     ax.set_xlim([-1, len(vals)])
     ax.set_ylim([0, max(max(ax.get_yticks()), max(vals))])
     ax.set_xticks(hours)

@@ -12,6 +12,7 @@ import ctypes
 from typing import Optional
 from type_alias import Icons, Fonts
 from inky.inky_uc8159 import Inky, DESATURATED_PALETTE, SATURATED_PALETTE
+import time
 
 CONFIG_FILENAME = 'config.ini'
 
@@ -25,6 +26,14 @@ def main_loop(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: 
   #elif (wakeup_time.minute % config.getint('REFRESH_PARTIAL_INTERVAL') == 0):
   #  refresh.refresh(panel_size, fonts, images, config, epd_so, False)
 
+def white_Inky(inky):
+  for _ in range(2):
+      for y in range(inky.height - 1):
+          for x in range(inky.width - 1):
+              inky.set_pixel(x, y, inky.WHITE)
+
+      inky.show()
+      time.sleep(30)
 
 def main():
   log.setup()
@@ -46,14 +55,20 @@ def main():
       #(epd_so, panel_size) = utils.get_epd_data(config)
 
       inky = Inky()
+
+      white_Inky(inky)
+
       panel_size = inky.resolution
 
       logger.info("Initial refresh")
       refresh.refresh(panel_size, fonts, images, config, inky, True)  # Once in the beginning
 
+      #time.sleep(10)
+      #refresh.refresh(panel_size, fonts, images, config, inky, True)  # Once in the beginning
+
       logger.info('Starting scheduler')
       scheduler = BlockingScheduler()
-      scheduler.add_job(lambda: main_loop(panel_size, fonts, images, config, inky), 'cron', hour='16', minute = '00')
+      scheduler.add_job(lambda: main_loop(panel_size, fonts, images, config, inky), 'cron', hour='15', minute = '45')
       scheduler.start()
 
   except FileNotFoundError as e:
