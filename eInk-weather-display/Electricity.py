@@ -35,7 +35,7 @@ PALETTE = {
 link = 'https://andelenergi.dk/?obexport_format=csv&obexport_start=2022-08-10&obexport_end=2022-08-18&obexport_region=east'
 
 region = 'east'
-transport_overhead = 1.59 #DKK
+transport_tarrifs = [0.79, 2.06, 0.79, 0.37]  # Day, Evening, Late Evening, Night
 
 logger = logging.getLogger(__name__)
 logger.info('Getting price data')
@@ -64,13 +64,22 @@ def get_El_price(start_date, end_date, region):
     df['Time'] = times.time.astype(str)
     df['Hour'] = times.hour.astype(str)
     df['Datetime'] = pd.to_datetime(df['Date'] + ' ' +df['Time'])
-    df['Price'] = el_data2_st.values+transport_overhead
+    df['Price_el'] = el_data2_st.values
     df['Weekday'] = df['Datetime'].dt.day_name()
     df['Weekday'] = df['Weekday'].str.slice(0, 3)
     df['WeekHour'] = df['Weekday']+df['Hour']
+    print(df["Hour"].astype(int))
+    transport_hour_ranges = [
+        (df["Hour"].astype(int)>=6) & (df["Hour"].astype(int)<16),   # Day
+        (df["Hour"].astype(int)>=16) & (df["Hour"].astype(int)<21),  # Evening
+        (df["Hour"].astype(int)>=21) & (df["Hour"].astype(int)<24),  # Late Evening
+        (df["Hour"].astype(int)>=0) & (df["Hour"].astype(int)<6)    # Night
+    ]
+    df['Tariff'] = np.select(transport_hour_ranges, transport_tarrifs)
+    df['Price'] = df['Price_el'] + df['Tariff']
 
 
-    df_future = df[df['Datetime']>str(datetime.now()+timedelta(hours=-2))]
+    df_future = df[df['Datetime']>str(datetime.now()+timedelta(hours=-1))]
     df_future.reset_index(drop=True,inplace=True)
     new_data = False
     tomorrow = str(datetime.now().date()+timedelta(days=1)) 

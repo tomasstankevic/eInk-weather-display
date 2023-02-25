@@ -68,7 +68,7 @@ def main():
 
       logger.info('Starting scheduler')
       scheduler = BlockingScheduler()
-      scheduler.add_job(lambda: main_loop(panel_size, fonts, images, config, inky), 'cron', hour='15', minute = '45')
+      scheduler.add_job(lambda: main_loop(panel_size, fonts, images, config, inky), 'cron', hour='17', minute = '01')
       scheduler.start()
 
   except FileNotFoundError as e:
