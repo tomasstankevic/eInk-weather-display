@@ -34,6 +34,9 @@ PALETTE = {
     'clean':tuple(np.array([255, 255, 255])/255)
 }
 
+link = 'https://andelenergi.dk/?obexport_format=csv&obexport_start=2022-08-10&obexport_end=2022-08-18&obexport_region=east'
+
+region = 'east'
 transport_tarrifs = [0.79, 2.06, 0.79, 0.37]  # Day, Evening, Late Evening, Night
 
 logger = logging.getLogger(__name__)
@@ -58,6 +61,8 @@ def get_El_price(start_date, end_date, region):
 
     NP_spotprices = pd.DataFrame.from_dict(NP_spotprices_json['records'])
 
+    NP_spotprices = NP_spotprices.sort_values(by='HourUTC', ascending=True)
+
     #print(NP_spotprices)
     NP_spotprices['Andel_DKK'] = NP_spotprices['SpotPriceDKK']/1000.*1.4+0.02
     NP_spotprices['Datetime_UTC'] = pd.to_datetime(NP_spotprices['HourUTC'])
@@ -76,17 +81,18 @@ def get_El_price(start_date, end_date, region):
 
     df['Weekday'] = df['Weekday'].str.slice(0, 3)
     df['WeekHour'] = df['Weekday'] + df['Hour']
-    print(df["Hour"].astype(int))
+
     transport_hour_ranges = [
         (df["Hour"].astype(int)>=6) & (df["Hour"].astype(int)<16),   # Day
         (df["Hour"].astype(int)>=16) & (df["Hour"].astype(int)<21),  # Evening
-        (df["Hour"].astype(int)>=21) | (df["Hour"].astype(int)<6)    # Night
+        (df["Hour"].astype(int)>=21) & (df["Hour"].astype(int)<24),  # Late Evening
+        (df["Hour"].astype(int)>=0) & (df["Hour"].astype(int)<6)    # Night
     ]
     df['Tariff'] = np.select(transport_hour_ranges, transport_tarrifs)
     df['Price'] = df['Price_el'] + df['Tariff']
-    pd.set_option('display.max_columns', 13)
 
-    df_future = df[df['Datetime']>str(datetime.now()+timedelta(hours=-2))]
+
+    df_future = df[df['Datetime']>str(datetime.now()+timedelta(hours=-1))]
     df_future.reset_index(drop=True,inplace=True)
     new_data = False
     tomorrow = str(datetime.now().date()+timedelta(days=1)) 
@@ -95,10 +101,53 @@ def get_El_price(start_date, end_date, region):
         logger.info('Prices for tomorrow available')
     else:
         logger.info('No price data for tomorrow')
+    return df_future, new_data
 
 
-    #print(df_future)
+def get_El_price_andel(start_date, end_date, region):
+    url = _make_El_price_URL(start_date, end_date, region)
+    try:
+        el_data = pd.read_csv(url, decimal=',')
+    except Exception as e:
+        logger.exception('Error getting price data from: %s', url)
+        return None, None
+    el_data.Date = pd.to_datetime(el_data.Date)#.dt.date
+    el_data2 = el_data.set_index('Date')
+    el_data2.columns = pd.to_datetime(el_data2.columns)
+    el_data2_st = el_data2.stack()
+    dates = el_data2_st.index.get_level_values(0) 
+    times = el_data2_st.index.get_level_values(1) 
+    times.to_pydatetime()
 
+    df = pd.DataFrame(columns= ['Date', 'Time', 'Datetime','Price'])
+    df['Date'] = dates.date.astype(str)
+    df['Time'] = times.time.astype(str)
+    df['Hour'] = times.hour.astype(str)
+    df['Datetime'] = pd.to_datetime(df['Date'] + ' ' +df['Time'])
+    df['Price_el'] = el_data2_st.values
+    df['Weekday'] = df['Datetime'].dt.day_name()
+    df['Weekday'] = df['Weekday'].str.slice(0, 3)
+    df['WeekHour'] = df['Weekday']+df['Hour']
+    print(df["Hour"].astype(int))
+    transport_hour_ranges = [
+        (df["Hour"].astype(int)>=6) & (df["Hour"].astype(int)<16),   # Day
+        (df["Hour"].astype(int)>=16) & (df["Hour"].astype(int)<21),  # Evening
+        (df["Hour"].astype(int)>=21) & (df["Hour"].astype(int)<24),  # Late Evening
+        (df["Hour"].astype(int)>=0) & (df["Hour"].astype(int)<6)    # Night
+    ]
+    df['Tariff'] = np.select(transport_hour_ranges, transport_tarrifs)
+    df['Price'] = df['Price_el'] + df['Tariff']
+
+
+    df_future = df[df['Datetime']>str(datetime.now()+timedelta(hours=-1))]
+    df_future.reset_index(drop=True,inplace=True)
+    new_data = False
+    tomorrow = str(datetime.now().date()+timedelta(days=1)) 
+    if tomorrow in df_future.Date.to_string():
+        new_data = True
+        logger.info('Prices for tomorrow available')
+    else:
+        logger.info('No price data for tomorrow')
     return df_future, new_data
 
 def make_El_panel(El_data, panel_size, colors=None, fonts=None):
