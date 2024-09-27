@@ -1,38 +1,31 @@
-import ctypes
 import logging
-from PIL import Image, ImageDraw
-#from observation_panel import get_observation_panel
-from info_panel import get_info_panel
-from forecast_panel import get_forecasts_panel
-#from celestial_panel import get_celestial_panel
-#from sensor_panel import get_sensor_panel
-#from sensor_data import get_sensor_data
-from timeit import default_timer as timer
 from configparser import SectionProxy
-from typing import Optional
-from type_alias import Icons, Fonts
+from datetime import datetime, timedelta
 from multiprocessing import Process
-from weather import get_observation_data, get_forecast_data, get_radiation_data
-from Electricity import get_El_price, make_El_panel
-from datetime import datetime, timedelta, date
-
+from timeit import default_timer as timer
+from Electricity import get_El_price_andel, make_El_panel
+from forecast_panel import get_forecasts_panel
+from PIL import Image, ImageDraw
+from type_alias import Fonts, Icons
+from weather import get_forecast_data
 
 PROCESS_TIMEOPUT = 240  # In seconds
 SATURATION = 1
 
 def refresh(panel_size: tuple[int, int], fonts: Fonts, images: Icons, config: SectionProxy, inky, init: bool) -> None:
-  logger = logging.getLogger(__name__)
-  logger.info('Refresh started')
-  start_time = timer()
-  now = datetime.today()
+    logger = logging.getLogger(__name__)
+    logger.info('Refresh started')
+    start_time = timer()
+    now = datetime.today()
 
-  # Fetch data
-  start_fetch_time = timer()
-  forecast_data = get_forecast_data(config, 7, 6, logger)
-  elapsed_fetch_time = timer() - start_fetch_time
-  El_data = None
-  while El_data is None:
-    El_data, new_data = get_El_price(now.date()-timedelta(hours=2), now.date()+timedelta(days=2), region='east')
+    # Fetch data
+    start_fetch_time = timer()
+    forecast_data = get_forecast_data(config, 7, 6, logger)
+    elapsed_fetch_time = timer() - start_fetch_time
+    El_data = None
+    while El_data is None:
+        El_data, new_data = get_El_price_andel(now.date()-timedelta(hours=2), now.date() + timedelta(days=2), region='east')
+
 
   # Draw individual panels
   logger.info('Drawing panels')

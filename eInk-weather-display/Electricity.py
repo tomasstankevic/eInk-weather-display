@@ -1,18 +1,15 @@
-import pandas as pd
-import numpy as np
-from matplotlib import pyplot as plt
-from datetime import datetime, timedelta, date
-from configparser import SectionProxy
-from logging import Logger
-import logging
 import io
-import requests
-import json
-from PIL import Image
-from typing import Mapping, Optional, Dict, List, Tuple
-import matplotlib.font_manager as fm
-from PIL.Image import Dither
+import logging
+from datetime import datetime, timedelta
+
 import matplotlib as mpl
+import matplotlib.font_manager as fm
+import numpy as np
+import pandas as pd
+import requests
+from matplotlib import pyplot as plt
+from PIL import Image
+from PIL.Image import Dither
 
 BLACK = 0
 WHITE = 1
@@ -34,121 +31,149 @@ PALETTE = {
     'clean':tuple(np.array([255, 255, 255])/255)
 }
 
-link = 'https://andelenergi.dk/?obexport_format=csv&obexport_start=2022-08-10&obexport_end=2022-08-18&obexport_region=east'
-
-region = 'east'
-transport_tarrifs = [0.79, 2.06, 0.79, 0.37]  # Day, Evening, Late Evening, Night
-
+# Set up logging
 logger = logging.getLogger(__name__)
-logger.info('Getting price data')
+logger.setLevel(logging.INFO)
+logging.basicConfig()
 
-def _make_El_price_URL(start_date: date, end_date: date, region: str) -> str:
+# Define region
+REGION = 'east'
+
+# Define tariff rates for get_El_price
+transport_tarrifs = [1.32, 1.67, 1.32, 1.25]  # Day, Evening, Late Evening, Night
+
+def _make_El_price_URL(start_date: str, end_date: str, region: str) -> str:
     endpoint = "https://api.energidataservice.dk/dataset/"
     dataset = "Elspotprices?"
-    parameters = "filter={\"PriceArea\":\"DK2\"}&start="+str(start_date)+"&end="+str(end_date)
+    parameters = f"filter={{\"PriceArea\":\"DK2\"}}&start={start_date}&end={end_date}"
     url = endpoint + dataset + parameters
     return url
 
+def _make_El_price_URL_andel(start_date: str, end_date: str, region: str) -> str:
+    url = (
+        "https://andelenergi.dk/?obexport_format=csv"
+        f"&obexport_start={start_date}"
+        f"&obexport_end={end_date}"
+        f"&obexport_region={region}"
+        "&obexport_tax=0&obexport_product_id=1%231%23TIMEENERGI"
+    )
+    return url
+
+def check_new_data_availability(df: pd.DataFrame) -> bool:
+    tomorrow = (datetime.now().date() + timedelta(days=1)).isoformat()
+    if tomorrow in df['Date'].values:
+        logger.info('Prices for tomorrow available')
+        return True
+    else:
+        logger.info('No price data for tomorrow')
+        return False
+
+def assign_tariff(hour: int) -> float:
+    if 6 <= hour < 16:
+        return transport_tarrifs[0]  # Day
+    elif 16 <= hour < 21:
+        return transport_tarrifs[1]  # Evening
+    elif 21 <= hour < 24:
+        return transport_tarrifs[2]  # Late Evening
+    else:
+        return transport_tarrifs[3]  # Night
+
 def get_El_price(start_date, end_date, region):
-    import requests
-    import json
+    url = _make_El_price_URL(
+        start_date.strftime("%Y-%m-%dT%H:%M"),
+        end_date.strftime("%Y-%m-%dT%H:%M"),
+        region
+    )
 
-    url = _make_El_price_URL(start_date.strftime("%Y-%m-%dT%H:%M"), end_date.strftime("%Y-%m-%dT%H:%M"), region)
-
-    print(url)
+    logger.info(f"Fetching data from: {url}")
 
     NP_spotprices_json = requests.get(url).json()
-
     NP_spotprices = pd.DataFrame.from_dict(NP_spotprices_json['records'])
 
+    # Sort data in ascending order
     NP_spotprices = NP_spotprices.sort_values(by='HourUTC', ascending=True)
 
-    #print(NP_spotprices)
-    NP_spotprices['Andel_DKK'] = NP_spotprices['SpotPriceDKK']/1000.*1.4+0.02
-    NP_spotprices['Datetime_UTC'] = pd.to_datetime(NP_spotprices['HourUTC'])
+    # Calculate 'Andel_DKK'
+    NP_spotprices['Andel_DKK'] = NP_spotprices['SpotPriceDKK'] / 1000.0 * 1.4 + 0.02
+
+    # Parse datetime columns
     NP_spotprices['Datetime_DK'] = pd.to_datetime(NP_spotprices['HourDK'])
-    NP_spotprices['HourDK'] = pd.to_datetime(NP_spotprices['HourDK'])
+    NP_spotprices['Datetime_UTC'] = pd.to_datetime(NP_spotprices['HourUTC'])
     NP_spotprices = NP_spotprices.set_index('Datetime_UTC')
-    
+
+    # Create DataFrame 'df'
     df = pd.DataFrame({
         'Date': NP_spotprices['Datetime_DK'].dt.date.astype(str),
         'Time': NP_spotprices['Datetime_DK'].dt.time.astype(str),
-        'Hour': NP_spotprices['Datetime_DK'].dt.hour.astype(str),
+        'Hour': NP_spotprices['Datetime_DK'].dt.hour,
         'Datetime': NP_spotprices['Datetime_DK'],
         'Price_el': NP_spotprices['Andel_DKK'],
-        'Weekday': NP_spotprices['HourDK'].dt.day_name()
-        })
+        'Weekday': NP_spotprices['Datetime_DK'].dt.day_name().str.slice(0, 3)
+    })
 
-    df['Weekday'] = df['Weekday'].str.slice(0, 3)
-    df['WeekHour'] = df['Weekday'] + df['Hour']
+    df['WeekHour'] = df['Weekday'] + df['Hour'].astype(str)
 
-    transport_hour_ranges = [
-        (df["Hour"].astype(int)>=6) & (df["Hour"].astype(int)<16),   # Day
-        (df["Hour"].astype(int)>=16) & (df["Hour"].astype(int)<21),  # Evening
-        (df["Hour"].astype(int)>=21) & (df["Hour"].astype(int)<24),  # Late Evening
-        (df["Hour"].astype(int)>=0) & (df["Hour"].astype(int)<6)    # Night
-    ]
-    df['Tariff'] = np.select(transport_hour_ranges, transport_tarrifs)
+    # Assign tariff using predefined rates and time ranges
+    df['Tariff'] = df['Hour'].apply(assign_tariff)
+
+    # Calculate total price
     df['Price'] = df['Price_el'] + df['Tariff']
 
+    # Filter future data
+    df_future = df[df['Datetime'] > datetime.now() - timedelta(hours=1)]
+    df_future.reset_index(drop=True, inplace=True)
 
-    df_future = df[df['Datetime']>str(datetime.now()+timedelta(hours=-1))]
-    df_future.reset_index(drop=True,inplace=True)
-    new_data = False
-    tomorrow = str(datetime.now().date()+timedelta(days=1)) 
-    if tomorrow in df_future.Date.to_string():
-        new_data = True
-        logger.info('Prices for tomorrow available')
-    else:
-        logger.info('No price data for tomorrow')
+    # Check for new data availability
+    new_data = check_new_data_availability(df_future)
+
     return df_future, new_data
-
 
 def get_El_price_andel(start_date, end_date, region):
-    url = _make_El_price_URL(start_date, end_date, region)
+    url = _make_El_price_URL_andel(
+        start_date.strftime("%Y-%m-%d"),
+        end_date.strftime("%Y-%m-%d"),
+        region
+    )
+    logger.info(f"Fetching data from: {url}")
+
     try:
-        el_data = pd.read_csv(url, decimal=',')
-    except Exception as e:
+        el_data = pd.read_csv(url, decimal=',', sep=',', encoding='utf-8')
+    except Exception:
         logger.exception('Error getting price data from: %s', url)
         return None, None
-    el_data.Date = pd.to_datetime(el_data.Date)#.dt.date
-    el_data2 = el_data.set_index('Date')
-    el_data2.columns = pd.to_datetime(el_data2.columns)
-    el_data2_st = el_data2.stack()
-    dates = el_data2_st.index.get_level_values(0) 
-    times = el_data2_st.index.get_level_values(1) 
-    times.to_pydatetime()
 
-    df = pd.DataFrame(columns= ['Date', 'Time', 'Datetime','Price'])
-    df['Date'] = dates.date.astype(str)
-    df['Time'] = times.time.astype(str)
-    df['Hour'] = times.hour.astype(str)
-    df['Datetime'] = pd.to_datetime(df['Date'] + ' ' +df['Time'])
-    df['Price_el'] = el_data2_st.values
-    df['Weekday'] = df['Datetime'].dt.day_name()
-    df['Weekday'] = df['Weekday'].str.slice(0, 3)
-    df['WeekHour'] = df['Weekday']+df['Hour']
-    print(df["Hour"].astype(int))
-    transport_hour_ranges = [
-        (df["Hour"].astype(int)>=6) & (df["Hour"].astype(int)<16),   # Day
-        (df["Hour"].astype(int)>=16) & (df["Hour"].astype(int)<21),  # Evening
-        (df["Hour"].astype(int)>=21) & (df["Hour"].astype(int)<24),  # Late Evening
-        (df["Hour"].astype(int)>=0) & (df["Hour"].astype(int)<6)    # Night
-    ]
-    df['Tariff'] = np.select(transport_hour_ranges, transport_tarrifs)
-    df['Price'] = df['Price_el'] + df['Tariff']
+    # Parse 'Start' column to datetime
+    el_data['Datetime_DK'] = pd.to_datetime(el_data['Start'], format='%d.%m.%Y - %H:%M')
 
+    # Convert numeric columns from string to float
+    numeric_cols = ['Elpris', 'Transport og afgifter', 'Total']
+    for col in numeric_cols:
+        el_data[col] = el_data[col].astype(str).str.replace(',', '.').astype(float)
 
-    df_future = df[df['Datetime']>str(datetime.now()+timedelta(hours=-1))]
-    df_future.reset_index(drop=True,inplace=True)
-    new_data = False
-    tomorrow = str(datetime.now().date()+timedelta(days=1)) 
-    if tomorrow in df_future.Date.to_string():
-        new_data = True
-        logger.info('Prices for tomorrow available')
-    else:
-        logger.info('No price data for tomorrow')
-    return df_future, new_data
+    # Sort data in ascending order
+    el_data = el_data.sort_values(by='Datetime_DK', ascending=True)
+
+    # Extract date and time components
+    el_data['Date'] = el_data['Datetime_DK'].dt.date.astype(str)
+    el_data['Time'] = el_data['Datetime_DK'].dt.time.astype(str)
+    el_data['Hour'] = el_data['Datetime_DK'].dt.hour
+    el_data['Weekday'] = el_data['Datetime_DK'].dt.day_name().str.slice(0, 3)
+    el_data['WeekHour'] = el_data['Weekday'] + el_data['Hour'].astype(str)
+
+    # Use 'Total' price and 'Transport og afgifter' directly from CSV
+    el_data['Price'] = el_data['Total']
+    el_data['Tariff'] = el_data['Transport og afgifter']
+    el_data['Price_el'] = el_data['Elpris']
+
+    # Filter future data
+    df_future = el_data[el_data['Datetime_DK'] > datetime.now() - timedelta(hours=1)]
+    df_future.reset_index(drop=True, inplace=True)
+
+    # Check for new data availability
+    new_data = check_new_data_availability(df_future)
+
+    return df_future, new_data 
+
 
 def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     buf = io.BytesIO()
@@ -188,7 +213,7 @@ def make_El_panel(El_data, panel_size, colors=None, fonts=None):
     El_data['RGB'] = [PALETTE[col] for col in El_data['Color']]
     El_data['HatchRGB'] = [PALETTE[col] for col in El_data['Hatch']]
 
-    barplot = ax.bar(El_data.WeekHour, El_data.Price, 0.4, color=El_data.RGB, edgecolor=El_data.HatchRGB, hatch='/', linewidth = linew)
+    ax.bar(El_data.WeekHour, El_data.Price, 0.4, color=El_data.RGB, edgecolor=El_data.HatchRGB, hatch='/', linewidth = linew)
 
     ax.set_xlim([-1, len(vals)])
     ax.set_ylim([0, max(max(ax.get_yticks()), max(vals))])
